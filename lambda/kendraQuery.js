@@ -1,29 +1,27 @@
 const AWS = require('aws-sdk');
 
-exports.main =  async function(event, context) {
+exports.main =  async function(event) {
     const promise = new Promise(function(resolve) {
-        AWS.config.region = 'us-west-2';
-        var kendra = new AWS.Kendra({apiVersion: '2019-02-03'}); 
-       
-        var params = { IndexId: '4899ed00-1436-479b-a6dc-8b4cff46828d', QueryText: event.queryStringParameters.queryText, PageNumber: parseInt(event.queryStringParameters.pageNumber) };
+        AWS.config.region = process.env.KENDRA_INDEX_REGION;
+        const kendra = new AWS.Kendra({apiVersion: '2019-02-03'}); 
+
+        const kendraIndexId = process.env.KENDRA_INDEX_ID;
+        const params = { IndexId: kendraIndexId, QueryText: event.queryStringParameters.queryText, PageNumber: parseInt(event.queryStringParameters.pageNumber) };
+        
+        const headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "OPTIONS,GET",
+            "Access-Control-Allow-Headers": "Content-Type",
+        }
+        
         kendra.query(params, (error, response) => {
             if(error) {
                 resolve({statusCode: 500,
-                headers: {
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "OPTIONS,GET",
-                    "Access-Control-Allow-Headers": "Content-Type",
-                },
+                headers,
                 body: JSON.stringify(error)});
-            }
-            
-            else {
+            } else {
                 resolve({statusCode: 200,
-                    headers: {
-                        "Access-Control-Allow-Origin": "*",
-                        "Access-Control-Allow-Methods": "OPTIONS,GET",
-                        "Access-Control-Allow-Headers": "Content-Type",
-                    },
+                    headers,
                     body: JSON.stringify(response)});
             }
         });

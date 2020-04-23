@@ -3,9 +3,15 @@ import apigateway = require("@aws-cdk/aws-apigateway");
 import lambda = require("@aws-cdk/aws-lambda");
 import s3 = require("@aws-cdk/aws-s3");
 import iam = require("@aws-cdk/aws-iam");
+import { CfnAccessKey } from "@aws-cdk/aws-iam";
+
+export interface KendraQueryAPIConfig {
+  kendraIndexRegion: string;
+  kendraIndexId: string;
+}
 
 export class KendraQueryApiStack extends core.Stack {
-  constructor(scope: core.Construct, id: string, props?: core.StackProps) {
+  constructor(scope: core.Construct, id: string, config: KendraQueryAPIConfig, props?: core.StackProps) {
     super(scope, id, props);
 
     const bucket = new s3.Bucket(this, "KendraQueryAPIStore");
@@ -16,9 +22,12 @@ export class KendraQueryApiStack extends core.Stack {
       handler: "kendraQuery.main"
     });
 
+    handler.addEnvironment("KENDRA_INDEX_REGION", config.kendraIndexRegion);
+    handler.addEnvironment("KENDRA_INDEX_ID", config.kendraIndexId);
+
     const statement = new iam.PolicyStatement();
     statement.addActions('kendra:Query');
-    statement.addResources(`arn:aws:kendra:${this.region}:${this.account}:index/*`);
+    statement.addResources(`arn:aws:kendra:${config.kendraIndexRegion}:${this.account}:index/${config.kendraIndexId}`);
 
     handler.addToRolePolicy(statement);
 
